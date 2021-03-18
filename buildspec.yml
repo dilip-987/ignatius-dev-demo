@@ -1,0 +1,74 @@
+version: 0.2
+
+env:
+  #variables:
+     # key: "value"
+     # key: "value"
+  #parameter-store:
+     # key: "value"
+     # key: "value"
+  secrets-manager:
+    LOGIN: prod/sonar:SONARTOKEN
+    HOST: prod/sonar:HOST
+    Organization: prod/sonar: ORGANIZATION
+    Project: prod/sonar:PROJECT
+     # key: secret-id:json-key:version-stage:version-id
+     # key: secret-id:json-key:version-stage:version-id
+  #exported-variables:
+     # - variable
+     # - variable
+  #git-credential-helper: yes
+phases:
+  install:
+    #If you use the Ubuntu standard image 2.0 or later, you must specify runtime-versions.
+    #If you specify runtime-versions and use an image other than Ubuntu standard image 2.0, the build fails.
+    runtime-versions:
+      java: openjdk11
+      # name: version
+      # name: version
+    #commands:
+      # - command
+      # - command
+  pre_build:
+    commands:
+      - apt-get update
+      - https://github-releases.githubusercontent.com/34444711/419f5280-7fe9-11eb-99b7-c63fffbd4804?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAIWNJYAX4CSVEH53A%2F20210318%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20210318T052051Z&X-Amz-Expires=300&X-Amz-Signature=5dc9416d06df9e63b971feacb3c690cc090b09cf8fa98637b30a8d206cfeaa54&X-Amz-SignedHeaders=host&actor_id=75600159&key_id=0&repo_id=34444711&response-content-disposition=attachment%3B%20filename%3Dsonar-scanner-msbuild-5.1.0.28487-net46.zip&response-content-type=application%2Foctet-stream
+      - unzip sonar-scanner-msbuild-5.1.0.28487-net46.zip
+      - export PATH=$PATH:sonar-scanner-msbuild-5.1.0.28487-net46.zip\sonar-scanner-4.4.0.2170\bin
+  build:
+    commands:
+      - SonarScanner.MSBuild.exe begin /k:"Dev_Bugs_AWS_codepipeline" /d:sonar.host.url="https://sonarqube-codescanning.ignatius.io" /d:sonar.login="341cf1a2dd681ed9dedaedcae14fdb33e1acb417"
+      - MsBuild.exe IAFConsulting.sln /t:Rebuild
+      - SonarScanner.MSBuild.exe end /d:sonar.login="341cf1a2dd681ed9dedaedcae14fdb33e1acb417"
+      - nuget restore IAFConsulting.sln
+      - msbuild IAFConsulting.sln /p:DeployOnBuild=True /p:AllowUntrustedCertificate=True /p:WebPublishMethod=FileSystem /p:PublishUrl=web-out\ /p:Configuration=Release /p:Platform="Any CPU" /p:DeleteExistingFiles=True /p:PublishProfile=CustomProfile-1.pubxml
+      - dir
+      - copy .\IAFConsulting\appspec.yml .\IAFConsulting\web-out\
+      - copy .\IAFConsulting\iis-start.bat .\IAFConsulting\web-out\
+      - copy .\IAFConsulting\iis-stop.bat .\IAFConsulting\web-out\
+      # - command
+      # - command
+  #post_build:
+    #commands:
+      # - command
+      # - command
+#reports:
+  #report-name-or-arn:
+    #files:
+      # - location
+      # - location
+    #base-directory: location
+    #discard-paths: yes
+    #file-format: JunitXml | CucumberJson
+artifacts:
+  files:
+    - '**\*'
+  base-directory: .\IAFConsulting\web-out\
+    # - location
+  #name: $(date +%Y-%m-%d)
+  #discard-paths: yes
+  #base-directory: location
+#cache:
+  #paths:
+    # - paths
+
